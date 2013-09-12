@@ -27,31 +27,59 @@ Usage
         return array(
             'upload'=>array(
                 'class'=>'application.extensions.swfupload.SWFUploadAction',
-                'filepath'=>'/var/www/yourpath/yourfilename.EXT', //注意这里是绝对路径,.EXT是文件后缀名替代符号
+                
+                //注意这里是绝对路径,.EXT是文件后缀名替代符号
+                'filepath'=>'/var/www/yourpath/yourfilename.EXT',
+                
+                'onAfterUpload'=>array($this,'saveFile'),
             )
         );
     }
 
 说明:
 
-    你必须要有这个upload action的权限，可以在accessRules函数中添加upload action 的访问权限
-    filepath 文件的完整上传路径 包括文件名 如: C:/file/logo.EXT 后缀名是用户上传的文件决定所以在这里只需要用 .EXT 替代
-    SWFUploadAction支持两个事件 onBeforeUpload 和 onAfterUpload
+**你必须要有这个upload action的权限，可以在accessRules函数中添加upload action 的访问权限**
+
+
+1. filepath 文件上传后保存到服务器的的绝对路径,包括文件名 如: /var/www/images/logo.EXT 文件未上传之前后缀名是未知的，故在这里用 .EXT 做为替代符，lcswfupload保存文件时获得文件扩展名替代.EXT
+
+
+2. SWFUploadAction支持两个事件 onBeforeUpload 和 onAfterUpload
+
+onAfterUpload 在文件保存到服务器后执行
+如上代码，onAfterUpload 绑定了$this->saveFile 函数。
+你可以在此函数中将文件名保存到数据库中，或者进行图片裁剪工作等。
+
+    public function saveFile($event)
+    {
+        //$event->sender['uploadedFile']  这个是 CUploadedFile 对象
+        //$event->sender['uploadedFile']->name;  文件上传之前的名字
+       // $event->sender['name']  yourfilename.EXT 文件保存到服务器的名字 由filepath指定
+       // do something   ......
+
+    }
 
 第二步：在视图中调用widget
 
         <?php 
-            $this->widget('application.extensions.swfupload.SWFUpload',array('callbackJS'=>'swfupload_callback'));
+            $this->widget(
+                'application.extensions.swfupload.SWFUpload',
+                array(
+                    'callbackJS'=>'swfupload_callback'
+                )
+            );
         ?>
 
 说明:
 
-    callbackJS 是图片上传后执行的js函数 函数定义格式如下：
-    第一参数是文件名字name，
-    第二参数是文件路径path，
-    第三参数是oldname是文件的原始名字，
+    callbackJS 是图片上传后lcswfupload将自动执行的js函数，用于在页面上获得上传后的文件名等。
+    用于场景如：将上传成功后的图片立即显示出来等。
+    函数定义格式如下： 
+        第一参数是文件名字name，
+        第二参数是文件路径path，
+        第三参数是oldname是文件的原始名字，
 
-javascript代码如下：
+javascript代码示例：
 
     function swfupload_callback(name,path,oldname)  
     {
